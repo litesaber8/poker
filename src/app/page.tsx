@@ -5,7 +5,7 @@ import { usePokerGame } from '@/lib/usePokerGame';
 import { Card } from '@/components/Card';
 
 export default function PokerGame() {
-  const { gameState, startNewGame, handleAction } = usePokerGame();
+  const { gameState, startNewGame, startNextRound, handleAction } = usePokerGame();
   const [playerCount, setPlayerCount] = useState(1);
   const [botCount, setBotCount] = useState(3);
   const [showCards, setShowCards] = useState(false);
@@ -121,12 +121,20 @@ export default function PokerGame() {
           <div className="text-center italic animate-pulse">
             {gameState.phase === 'showdown' ? 'Winner Revealed!' : `Waiting for ${currentPlayer.name}...`}
             {gameState.phase === 'showdown' && (
-               <button 
-               onClick={() => startNewGame(playerCount, botCount)}
-               className="block mx-auto mt-4 bg-yellow-500 text-black px-8 py-2 rounded-full font-bold"
-             >
-               PLAY AGAIN
-             </button>
+               <div className="flex flex-col gap-2">
+                 <button 
+                  onClick={() => { startNextRound(); setShowCards(false); }}
+                  className="block mx-auto mt-4 bg-blue-500 text-white px-8 py-2 rounded-full font-bold hover:bg-blue-600 transition"
+                >
+                  LANJUT KE RONDE BERIKUTNYA
+                </button>
+                <button 
+                  onClick={() => { startNewGame(playerCount, botCount); setShowCards(false); }}
+                  className="block mx-auto bg-yellow-500 text-black px-8 py-2 rounded-full font-bold hover:bg-yellow-600 transition"
+                >
+                  MULAI ULANG PERMAINAN
+                </button>
+               </div>
             )}
           </div>
         ) : (

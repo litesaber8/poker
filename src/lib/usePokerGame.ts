@@ -80,7 +80,6 @@ export function usePokerGame() {
     let newPlayers = [...players];
     let newPot = pot;
     let newCurrentBet = currentBet;
-    let nextPhase = phase;
 
     switch (action) {
       case 'fold':
@@ -92,19 +91,27 @@ export function usePokerGame() {
         break;
       case 'call':
         const callAmount = currentBet - currentPlayer.bet;
-        newPlayers[currentPlayerIndex].chips -= callAmount;
-        newPlayers[currentPlayerIndex].bet += callAmount;
-        newPot += callAmount;
-        newPlayers[currentPlayerIndex].lastAction = 'Call';
+        const actualCall = Math.min(callAmount, currentPlayer.chips);
+        newPlayers[currentPlayerIndex].chips -= actualCall;
+        newPlayers[currentPlayerIndex].bet += actualCall;
+        newPot += actualCall;
+        newPlayers[currentPlayerIndex].lastAction = actualCall < callAmount ? 'All-In (Call)' : 'Call';
+        if (newPlayers[currentPlayerIndex].chips === 0) {
+          newPlayers[currentPlayerIndex].isAllIn = true;
+        }
         break;
       case 'raise':
         if (amount) {
           const raiseAmount = amount - currentPlayer.bet;
-          newPlayers[currentPlayerIndex].chips -= raiseAmount;
-          newPlayers[currentPlayerIndex].bet += raiseAmount;
-          newPot += raiseAmount;
-          newCurrentBet = amount;
-          newPlayers[currentPlayerIndex].lastAction = `Raise to ${amount}`;
+          const actualRaise = Math.min(raiseAmount, currentPlayer.chips);
+          newPlayers[currentPlayerIndex].chips -= actualRaise;
+          newPlayers[currentPlayerIndex].bet += actualRaise;
+          newPot += actualRaise;
+          newCurrentBet = newPlayers[currentPlayerIndex].bet;
+          newPlayers[currentPlayerIndex].lastAction = actualRaise < raiseAmount ? `All-In (Raise to ${newCurrentBet})` : `Raise to ${newCurrentBet}`;
+          if (newPlayers[currentPlayerIndex].chips === 0) {
+            newPlayers[currentPlayerIndex].isAllIn = true;
+          }
         }
         break;
     }
@@ -223,6 +230,8 @@ export function usePokerGame() {
           handleAction('check');
         } else if (bot.chips >= callAmount) {
           handleAction('call');
+        } else if (bot.chips > 0) {
+          handleAction('call'); // Will be an All-In call
         } else {
           handleAction('fold');
         }
@@ -231,5 +240,48 @@ export function usePokerGame() {
     }
   }, [gameState]);
 
-  return { gameState, startNewGame, handleAction };
+  const startNextRound = () => {
+    if (!gameState) return;
+    
+    // Filter out bankrupt players (chips <= 0)
+    const nextPlayers = gameState.players
+      .filter(p => p.chips > 0)
+      .map(p => ({
+        ...p,
+        cards: [],
+        bet: 0,
+        isFolded: false,
+        isAllIn: false,
+        lastAction: undefined
+      }));
+
+    if (nextPlayers.length < 2) {
+      alert("Permainan selesai! Tidak cukup pemain yang memiliki chip.");
+      setGameState(null);
+      return;
+    }
+
+    const deck = shuffleDeck(createDeck());
+    const dealerIndex = (gameState.dealerIndex + 1) % nextPlayers.length;
+    
+    const sbIndex = (dealerIndex + 1) % nextPlayers.length;
+    const bbIndex = (dealerIndex + 2) % nextPlayers.length;
+    
+    setGameState({
+      players: nextPlayers,
+      communityCards: [],
+      pot: 0,
+      phase: 'betting',
+      dealerIndex,
+      currentPlayerIndex: (dealerIndex + 3) % nextPlayers.length,
+      deck,
+      smallBlind: SMALL_BLIND,
+      bigBlind: BIG_BLIND,
+      currentBet: BIG_BLIND,
+    });
+
+    dealInitialCards(nextPlayers, deck, sbIndex, bbIndex);
+  };
+
+  return { gameState, startNewGame, startNextRound, handleAction };
 }
