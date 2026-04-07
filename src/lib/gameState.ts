@@ -42,7 +42,10 @@ export function getNextPlayerIndex(currentIndex: number, players: Player[]): num
 }
 
 export function isBettingRoundOver(players: Player[], currentBet: number): boolean {
-  const activePlayers = players.filter(p => !p.isFolded);
-  // All active players must have matched the current bet or be all-in
-  return activePlayers.every(p => p.bet === currentBet || p.isAllIn);
+  const activePlayers = players.filter(p => !p.isFolded && !p.isAllIn);
+  // All active players must have had a chance to act and matched the current bet
+  const everyoneActed = activePlayers.every(p => p.lastAction !== undefined);
+  const everyoneMatched = activePlayers.every(p => p.bet === currentBet);
+  
+  return everyoneActed && everyoneMatched;
 }

@@ -35,7 +35,7 @@ export default function PokerGame() {
             onClick={() => startNewGame(playerCount, botCount)}
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 rounded-lg transition"
           >
-            START GAME
+            MULAI PERMAINAN
           </button>
         </div>
       </div>
@@ -49,8 +49,11 @@ export default function PokerGame() {
     <div className="flex flex-col items-center min-h-screen bg-green-900 text-white p-4 overflow-hidden">
       {/* Header */}
       <div className="w-full flex justify-between mb-4 px-4">
-        <div className="bg-black/30 p-2 rounded-lg">Pot: <span className="font-bold text-yellow-400">${gameState.pot}</span></div>
-        <div className="bg-black/30 p-2 rounded-lg">Phase: <span className="uppercase font-bold">{gameState.phase}</span></div>
+        <div className="bg-black/30 p-2 rounded-lg">Total Pot: <span className="font-bold text-yellow-400">${gameState.pot}</span></div>
+        <div className="bg-black/30 p-2 rounded-lg text-center">
+          <span className="uppercase font-bold tracking-widest text-blue-300">{gameState.phase}</span>
+        </div>
+        <div className="bg-black/30 p-2 rounded-lg">Taruhan: <span className="font-bold text-red-400">${gameState.currentBet}</span></div>
       </div>
 
       {/* Table */}
@@ -163,12 +166,20 @@ export default function PokerGame() {
                       CALL ${gameState.currentBet - currentPlayer.bet}
                     </button>
                   )}
-                  <button 
-                    onClick={() => { handleAction('raise', gameState.currentBet + 50); setShowCards(false); }}
-                    className="bg-yellow-500 text-black px-4 py-3 rounded-lg font-bold flex-1"
-                  >
-                    RAISE $50
-                  </button>
+                  <div className="flex flex-col flex-1 gap-1">
+                    <button 
+                      onClick={() => { handleAction('raise', gameState.currentBet + 50); setShowCards(false); }}
+                      className="bg-yellow-500 text-black px-4 py-2 rounded-lg font-bold text-sm"
+                    >
+                      RAISE $50
+                    </button>
+                    <button 
+                      onClick={() => { handleAction('raise', gameState.currentBet + 100); setShowCards(false); }}
+                      className="bg-yellow-600 text-black px-4 py-2 rounded-lg font-bold text-sm"
+                    >
+                      RAISE $100
+                    </button>
+                  </div>
                 </>
               )}
             </div>

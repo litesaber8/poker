@@ -35,6 +35,9 @@ export function usePokerGame() {
     const deck = shuffleDeck(createDeck());
     const dealerIndex = 0;
     
+    const sbIndex = (dealerIndex + 1) % players.length;
+    const bbIndex = (dealerIndex + 2) % players.length;
+    
     // Initial State
     setGameState({
       players,
@@ -49,16 +52,12 @@ export function usePokerGame() {
       currentBet: BIG_BLIND,
     });
 
-    dealInitialCards(players, deck, dealerIndex);
+    dealInitialCards(players, deck, sbIndex, bbIndex);
   };
 
-  const dealInitialCards = (players: Player[], deck: Card[], dealerIndex: number) => {
+  const dealInitialCards = (players: Player[], deck: Card[], sbIndex: number, bbIndex: number) => {
     const newDeck = [...deck];
     const newPlayers = players.map(p => ({ ...p, cards: [newDeck.pop()!, newDeck.pop()!] }));
-    
-    // Pay blinds
-    const sbIndex = (dealerIndex + 1) % newPlayers.length;
-    const bbIndex = (dealerIndex + 2) % newPlayers.length;
     
     newPlayers[sbIndex].chips -= SMALL_BLIND;
     newPlayers[sbIndex].bet = SMALL_BLIND;
@@ -112,6 +111,13 @@ export function usePokerGame() {
 
     const nextPlayerIndex = getNextPlayerIndex(currentPlayerIndex, newPlayers);
     
+    // Check if only one player left
+    const activePlayersCount = newPlayers.filter(p => !p.isFolded).length;
+    if (activePlayersCount === 1) {
+       handleOnePlayerLeft(newPlayers, newPot);
+       return;
+    }
+
     // Check if betting round is over
     if (isBettingRoundOver(newPlayers, newCurrentBet)) {
       moveToNextPhase(newPlayers, newPot, newCurrentBet, phase);
@@ -124,6 +130,23 @@ export function usePokerGame() {
         currentBet: newCurrentBet,
       });
     }
+  };
+
+  const handleOnePlayerLeft = (players: Player[], pot: number) => {
+    const winner = players.find(p => !p.isFolded)!;
+    const newPlayers = players.map(p => {
+      if (p.id === winner.id) {
+        return { ...p, chips: p.chips + pot, lastAction: 'Winner (All others folded)' };
+      }
+      return p;
+    });
+
+    setGameState(prev => prev ? {
+      ...prev,
+      players: newPlayers,
+      phase: 'showdown',
+      pot: 0,
+    } : null);
   };
 
   const moveToNextPhase = (players: Player[], pot: number, currentBet: number, currentPhase: Phase) => {
